@@ -32,7 +32,7 @@ FROM ghcr.io/versity/versitygw:latest@sha256:c4cbd9d9cb8dedbb055ac788dbd02635651
 # Not webtor components: the event bus and the CLI that provisions its stream.
 # Both publish linux/amd64 and linux/arm64. Renovate does not watch either
 # (renovate.json matches ghcr.io/webtor-io/**), so bumps here are manual.
-FROM nats:alpine@sha256:d4ac35882ac65aff236cd65b9d3fa4d24332c681e1a85f94eedccd3cdd65b1da AS nats
+FROM nats:alpine@sha256:ad7a43eb7e3337c3c38ce5d784d1461791f95f730f252d2b25eee699752a0ca3 AS nats
 FROM natsio/nats-box:latest@sha256:ffce8bd103383f179f8c7f11cf645726acf5d17280706c530c3b342dbe16334c AS natsbox
 
 FROM alpine:${ALPINE_VER}
