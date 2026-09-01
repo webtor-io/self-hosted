@@ -12,7 +12,7 @@ FROM ghcr.io/webtor-io/magnet2torrent:master@sha256:c28c6c94f6d976b831fca3a26323
 FROM ghcr.io/webtor-io/external-proxy:master@sha256:a7a267df98865d1e9e3c27cd47053db9ff9ed4b6b5e93fbf9a69d343d0c97c0f AS external-proxy
 FROM ghcr.io/webtor-io/torrent-web-seeder:master@sha256:50efc749fe9c55be9a6fa7082e9ad73958e6ac08ec5447136fe086fa059ddc88 AS torrent-web-seeder
 FROM ghcr.io/webtor-io/torrent-web-seeder-cleaner:main@sha256:84ffc9c054094b3c2a077b8247dc74e3ae75b7ca965b473a8ada92143e1fdba0 AS torrent-web-seeder-cleaner
-FROM ghcr.io/webtor-io/content-transcoder:master@sha256:b814ffa918b1f0f5ae28b33e658ed7ea285199d9f79d9d1b2a2d778bcd08db50 AS content-transcoder
+FROM ghcr.io/webtor-io/content-transcoder:master@sha256:f29e48b711f755920d999094f9cc0c35691707d005515b72dc8cbf8ceb6b6c79 AS content-transcoder
 FROM ghcr.io/webtor-io/content-prober:master@sha256:7aef6155fddc2d2fda159d6566ef87d1c9ab9757bd2e8f15a8c6a7674b62a472 AS content-prober
 FROM ghcr.io/webtor-io/torrent-archiver:master@sha256:d1c158eda4d39242f84981a895eece2218c14e51916f81e27d991fbbd90c7364 AS torrent-archiver
 FROM ghcr.io/webtor-io/srt2vtt:master@sha256:a78915ff19ac490253e0cba8c7b01b4c73a7e961e58120315caa7f58c14a2bbb AS srt2vtt
