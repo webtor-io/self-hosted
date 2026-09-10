@@ -13,10 +13,14 @@ name: Renovate
 
 on:
   schedule:
-    # Daily. A bump PR opened on one run has its smoke checks evaluated and
-    # is automerged on the next, so the digest-to-main latency is ~a day —
-    # well inside the weekly release cadence.
-    - cron: '0 3 * * *'
+    # Every four hours. A bump PR opened on one run has its smoke checks
+    # evaluated and is automerged on a later run — but only if no newer
+    # digest appeared in between, because a new digest rewrites the PR and
+    # restarts its checks. Components that deploy daily (web-ui) never got
+    # a quiet day between two daily runs, so their PRs sat open for weeks
+    # (#22 lived 13 days). Six runs a day leave several merge windows
+    # between deploys; the release job's own 24h soak still gates the tag.
+    - cron: '0 */4 * * *'
   workflow_dispatch:
 
 jobs:
