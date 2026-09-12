@@ -18,7 +18,7 @@ FROM ghcr.io/webtor-io/torrent-archiver:master@sha256:aa7691ca6d90782176cbf3455a
 FROM ghcr.io/webtor-io/srt2vtt:master@sha256:7de27e2b93a980639685e8d29451f6a2c3c05219041c5c0e156e960e8138cac8 AS srt2vtt
 FROM ghcr.io/webtor-io/torrent-http-proxy:master@sha256:7ffa99902a4a0d6f5767b4c5468f994df9818f042cce8aacbedfe55523272091 AS torrent-http-proxy
 FROM ghcr.io/webtor-io/rest-api:main@sha256:2b9241af30d66c086a691e3a14c7a4a0265469dadcf80d237a04cfb6aa1f5eb0 AS rest-api
-FROM ghcr.io/webtor-io/web-ui:main@sha256:afb48275c52584c8c25d23c91826df3bccd2210b88988cccd949ff7237ecc117 AS web-ui
+FROM ghcr.io/webtor-io/web-ui:main@sha256:e3663e1287c129efe5b03b2b9761d7a54c391189516a3466240f0a31e0046fb8 AS web-ui
 FROM ghcr.io/webtor-io/nginx-vod:main@sha256:4d9aaa6ac3dc2e3e73bdf8afd47d4ffab0a932f22b91a4c8cdd7674290bd89dd AS nginx-vod
 FROM ghcr.io/webtor-io/vault:main@sha256:0c130c5764c7f0c8377bd41bdf9545552098d702e49529d8acd65167d08acee8 AS vault
 
