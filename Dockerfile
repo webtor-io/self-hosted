@@ -7,7 +7,7 @@ ARG S6_VERBOSITY=1
 # Nothing is compiled here any more. The Alpine base below and its apk
 # packages are NOT pinned to a digest and will float to whatever `apk add`
 # resolves at build time.
-FROM ghcr.io/webtor-io/torrent-store:master@sha256:1c19510a76b9f40d71e825e92dfd69330f599d5d5e9742d8bd2de38d73f2b8ad AS torrent-store
+FROM ghcr.io/webtor-io/torrent-store:master@sha256:77b2ab8123d7331178199337c2e36155e3e2a908865818ea61f6857ef45fbc79 AS torrent-store
 FROM ghcr.io/webtor-io/magnet2torrent:master@sha256:94c137529b6c55a635bca5f4b0fbd1a5012070912cfcc3a9cdde4d1dd50415cf AS magnet2torrent
 FROM ghcr.io/webtor-io/external-proxy:master@sha256:a7a267df98865d1e9e3c27cd47053db9ff9ed4b6b5e93fbf9a69d343d0c97c0f AS external-proxy
 FROM ghcr.io/webtor-io/torrent-web-seeder:master@sha256:54e346fa838d3fd25460f852f53a8bc0495be98fedbbaafff67bf9b2254e2ef9 AS torrent-web-seeder
