@@ -22,7 +22,7 @@ FROM ghcr.io/webtor-io/torrent-http-proxy:master@sha256:6fb1b8ab95ec1c1c475d47ef
 FROM ghcr.io/webtor-io/rest-api:main@sha256:02f3bfa0ec0ecf18f0715520d913e9a9e1f3c0303c8d8c7b0ba64991c751fa01 AS rest-api
 FROM ghcr.io/webtor-io/web-ui:main@sha256:ce12e211a39465a9cef83235efad1177002a4f5e015855bb406d642073b5740c AS web-ui
 FROM ghcr.io/webtor-io/nginx-vod:main@sha256:4d9aaa6ac3dc2e3e73bdf8afd47d4ffab0a932f22b91a4c8cdd7674290bd89dd AS nginx-vod
-FROM ghcr.io/webtor-io/vault:main@sha256:0c130c5764c7f0c8377bd41bdf9545552098d702e49529d8acd65167d08acee8 AS vault
+FROM ghcr.io/webtor-io/vault:main@sha256:acd5b5abb08dda2c40d20627a8b7c11391d6598e9a85f53abc4ee50c32098afb AS vault
 
 # Not a webtor component: the S3 gateway backing /storage. Apache 2.0, one
 # static binary, and its posix backend keeps objects as ordinary files so a
