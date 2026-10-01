@@ -16,7 +16,7 @@ FROM ghcr.io/webtor-io/content-transcoder:master@sha256:2694bed70e0c581e8b2a8c5b
 FROM ghcr.io/webtor-io/content-prober:master@sha256:92f61276cd28b97bbd5a8fed49763ee2475019a172d27b0e1491dde2e8c4741b AS content-prober
 FROM ghcr.io/webtor-io/torrent-archiver:master@sha256:76196b2b4c9e84203111bcf8b95e53cf33ddfa949571a452d0b63aaf543ad339 AS torrent-archiver
 FROM ghcr.io/webtor-io/srt2vtt:master@sha256:7de27e2b93a980639685e8d29451f6a2c3c05219041c5c0e156e960e8138cac8 AS srt2vtt
-FROM ghcr.io/webtor-io/subtitle-translate:master@sha256:c823ac1475f91d924b3b0721d03b70cacd2904688742a43a5b8b3f889e56386e AS subtitle-translate
+FROM ghcr.io/webtor-io/subtitle-translate:master@sha256:c2d709692e1cc8d912ba68fb1b78ca17672f27f57abfd23cbaff9f06253413b4 AS subtitle-translate
 FROM ghcr.io/webtor-io/video-info:master@sha256:bf81075df9c09ac41aefd2abd1ca2d880855d051b75dca5f5bdc579a276acb8a AS video-info
 FROM ghcr.io/webtor-io/torrent-http-proxy:master@sha256:e75fd9726ca4b17a2c4d0344ac136000723feb61ba5bd4be8c68071163b47ae8 AS torrent-http-proxy
 FROM ghcr.io/webtor-io/rest-api:main@sha256:02f3bfa0ec0ecf18f0715520d913e9a9e1f3c0303c8d8c7b0ba64991c751fa01 AS rest-api
