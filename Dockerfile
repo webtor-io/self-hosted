@@ -10,7 +10,7 @@ ARG S6_VERBOSITY=1
 FROM ghcr.io/webtor-io/torrent-store:master@sha256:e24879dbe0b2eeec56c32dac0334bcc48f78dd069c945e91b1039147e1a94c25 AS torrent-store
 FROM ghcr.io/webtor-io/magnet2torrent:master@sha256:995def6c52f189b9afc6de1a6493330d8fc25797ca4cbba95f0d7e364ea56493 AS magnet2torrent
 FROM ghcr.io/webtor-io/external-proxy:master@sha256:a7a267df98865d1e9e3c27cd47053db9ff9ed4b6b5e93fbf9a69d343d0c97c0f AS external-proxy
-FROM ghcr.io/webtor-io/torrent-web-seeder:master@sha256:03a0a49cf66a824d0999d3060eb39552af9c3a13099d71817dc5bd8343592e2a AS torrent-web-seeder
+FROM ghcr.io/webtor-io/torrent-web-seeder:master@sha256:e6082ea3525c9c485f774717ddda866052d6e5056fa1ab0fa706674ecfdb3f3f AS torrent-web-seeder
 FROM ghcr.io/webtor-io/torrent-web-seeder-cleaner:main@sha256:767e017b2adc53c07ebc65f4073cb6341fd460a1c688105edcc3a615e000a8c1 AS torrent-web-seeder-cleaner
 FROM ghcr.io/webtor-io/content-transcoder:master@sha256:2694bed70e0c581e8b2a8c5b86f8cd61f67f48e8b44b16b6d2de777df35cadfb AS content-transcoder
 FROM ghcr.io/webtor-io/content-prober:master@sha256:92f61276cd28b97bbd5a8fed49763ee2475019a172d27b0e1491dde2e8c4741b AS content-prober
