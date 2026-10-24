@@ -5,6 +5,6 @@ WEB_PORT=$EXTERNAL_PROXY_SERVICE_PORT
 # external-proxy fetches only from public addresses unless an origin is listed
 # here. Uploaded subtitles are fetched from $DOMAIN, which is loopback by
 # default and a LAN address on many installs, so it is always listed.
-PRIVATE_NETWORK_ORIGINS=$DOMAIN${PRIVATE_NETWORK_ORIGINS:+,$PRIVATE_NETWORK_ORIGINS}
+PRIVATE_NETWORK_ORIGINS=$DOMAIN${EXTERNAL_PROXY_PRIVATE_NETWORK_ORIGINS:+,$EXTERNAL_PROXY_PRIVATE_NETWORK_ORIGINS}
 set +a
 /app/external-proxy 2>&1 | s6-log p"[external-proxy]" 1
