@@ -373,3 +373,4 @@ which half is missing.
 
 - **WAIT_FOR_VPN** - waits for VPN to start (in case you are using Gluetun) (default: false)
 - **REQUEST_URL_MAPPINGS** - custom mappings for request urls
+- **EXTERNAL_PROXY_PRIVATE_NETWORK_ORIGINS** - comma-separated origins (`scheme://host[:port]`) that posters and subtitles may be fetched from even at a private or loopback address, such as a site on your LAN that embeds the player. Your own `DOMAIN` is always on the list; any other url is fetched from public addresses only, and a refused one is logged by `[external-proxy]` with the host and the reason (default: empty)
