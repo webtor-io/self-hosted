@@ -20,7 +20,7 @@ FROM ghcr.io/webtor-io/subtitle-translate:master@sha256:09c5590b171e81654ef640e2
 FROM ghcr.io/webtor-io/video-info:master@sha256:e46649680fd6662c9f8050e1dcc3884fe81463e6457113000be0fae82870a881 AS video-info
 FROM ghcr.io/webtor-io/torrent-http-proxy:master@sha256:aca64d423c0c1986a95472f97056071cc3eab89eaba71c1c04497111687c5d3d AS torrent-http-proxy
 FROM ghcr.io/webtor-io/rest-api:main@sha256:b6fc8d6da44df555274793ffcb8fafd71daa75f661ef3ef5fa9f17908e8f0efd AS rest-api
-FROM ghcr.io/webtor-io/web-ui:main@sha256:2a94113c56fdf99453f8c88bbe8a80a2f25bdd7df9c75dd762e772173f027947 AS web-ui
+FROM ghcr.io/webtor-io/web-ui:main@sha256:96bd84f3b4599d3151715c1e6255abe3c13b8a637c0502f26d0543e566d014fc AS web-ui
 FROM ghcr.io/webtor-io/nginx-vod:main@sha256:fd1f4fa696e945b73019981d7f077d429035a304bead2125adf1e689a097a2d6 AS nginx-vod
 FROM ghcr.io/webtor-io/vault:main@sha256:4cdd6c26fb0ba31b5c989b1f04abd65f97996f63ee978b6959d7bddbafafa662 AS vault
 
