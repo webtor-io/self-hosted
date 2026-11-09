@@ -8,7 +8,7 @@ ARG S6_VERBOSITY=1
 # packages are NOT pinned to a digest and will float to whatever `apk add`
 # resolves at build time.
 FROM ghcr.io/webtor-io/torrent-store:master@sha256:67b1afdfb780ce4cd799ae551539905ee270b2a9a29c9805934f41a62efd390a AS torrent-store
-FROM ghcr.io/webtor-io/magnet2torrent:master@sha256:cb5e582d9f1c82df367ac85b91972c4bf799dc9a41515e66993b3c9e139661f7 AS magnet2torrent
+FROM ghcr.io/webtor-io/magnet2torrent:master@sha256:e79480a8159fdd7d145d424f1babe29cdaf24cbfad55dbe341f1159c2f6988af AS magnet2torrent
 FROM ghcr.io/webtor-io/external-proxy:master@sha256:0467ae47db9ea0fece5f7861573a20097b4fec91fe09f13eb3c2b702196fb875 AS external-proxy
 FROM ghcr.io/webtor-io/torrent-web-seeder:master@sha256:a400b34d5b5dab86c038a0348d836d88cefdcebda34ca890c83b56d10571bfae AS torrent-web-seeder
 FROM ghcr.io/webtor-io/torrent-web-seeder-cleaner:main@sha256:d839cc3bb114ef1c1c2718bcbc8a490d75a4deca6207d569d23e6163485a78f8 AS torrent-web-seeder-cleaner
