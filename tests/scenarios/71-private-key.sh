@@ -32,6 +32,7 @@ grep -q '\[generate-private-trackers-key\] WARNING' <<<"$(docker compose -f "$TE
   || fail "a generated key was not warned about"
 
 # The record lands in the S3 bucket, not only in Badger.
-id="$(apiv1 POST /resource --data-binary "@$FIXTURE_DIR/smoke.torrent" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
+resource="$(apiv1 POST /resource --data-binary "@$FIXTURE_DIR/smoke.torrent")" || fail "a public upload fails"
+id="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])' <<<"$resource")" || fail "no resource id in: $resource"
 wait_for 30 "torrent-store object in S3" webtor_exec test -f "/storage/torrent-store/$id"
 echo "PASS: private-key"
