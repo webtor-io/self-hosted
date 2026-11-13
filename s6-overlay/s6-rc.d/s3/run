@@ -58,7 +58,7 @@ rm -f "$probe"
 # Derived from the variables that name the buckets, not hardcoded --
 # VAULT_AWS_BUCKET, AWS_POSTER_CACHE_BUCKET, AWS_USER_SUBTITLE_BUCKET,
 # AWS_THUMBNAIL_BUCKET, SUBTITLE_TRANSLATE_AWS_BUCKET, VIDEO_INFO_AWS_BUCKET,
-# all defaulted in common.template.env -- so
+# TORRENT_STORE_AWS_BUCKET, all defaulted in common.template.env -- so
 # `-e VAULT_AWS_BUCKET=myvault` actually gets a directory created for it
 # instead of silently working against a bucket that doesn't exist.
 #
@@ -69,7 +69,7 @@ rm -f "$probe"
 # look like this service -- and versitygw then starts and serves a bucket
 # that cannot hold an object. Fail the way the probes do instead: say what
 # is wrong, and idle rather than pretend to work.
-for b in "$VAULT_AWS_BUCKET" "$AWS_POSTER_CACHE_BUCKET" "$AWS_USER_SUBTITLE_BUCKET" "$AWS_THUMBNAIL_BUCKET" "$SUBTITLE_TRANSLATE_AWS_BUCKET" "$VIDEO_INFO_AWS_BUCKET"; do
+for b in "$VAULT_AWS_BUCKET" "$AWS_POSTER_CACHE_BUCKET" "$AWS_USER_SUBTITLE_BUCKET" "$AWS_THUMBNAIL_BUCKET" "$SUBTITLE_TRANSLATE_AWS_BUCKET" "$VIDEO_INFO_AWS_BUCKET" "$TORRENT_STORE_AWS_BUCKET"; do
   if ! mkdir -p "$STORAGE_DIR/$b" 2>/dev/null; then
     log "FATAL: cannot create the bucket directory $STORAGE_DIR/$b."
     log "Something that is not a directory already occupies that path -- remove it,"

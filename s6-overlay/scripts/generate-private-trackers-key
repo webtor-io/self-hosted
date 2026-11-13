@@ -1,0 +1,48 @@
+#!/command/with-contenv sh
+
+# Same pattern as generate-session-secret. PRIVATE_TRACKERS_KEY encrypts the
+# private tracker URLs torrent-store keeps for users' private torrents, and
+# torrent-store is the only service that reads this file: no other run script
+# sources it.
+#
+# 32 bytes from /dev/urandom, not the neighbours' `uuidgen | sha1sum`: that
+# carries at most the 122 random bits of a v4 UUID, however long its hex is,
+# and this is an encryption key, not a session secret.
+#
+# The key must not be lost or changed. Nothing derives it again: records
+# written under a lost key cannot be decrypted, so every saved private tracker
+# becomes unreadable and users have to upload their .torrent files again.
+# /etc/webtor/secrets lives in the container's layer, so a restart keeps the
+# key but recreating the container -- every image upgrade -- does not. Hence
+# the WARNING below whenever this script generates one, and a key given in the
+# environment always wins over the file.
+
+log() {
+   echo "$1" | s6-log p"[generate-private-trackers-key]" 1
+}
+
+# Values are written single-quoted: this file is re-read with `source` as
+# root, so a value containing $(...), a backtick, a space or an apostrophe
+# would execute, break the file, or arrive different from what was set.
+shquote() {
+  printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"
+}
+
+f=/etc/webtor/secrets/private-trackers.env
+mkdir -p "$(dirname "$f")"
+if [ -n "$PRIVATE_TRACKERS_KEY" ]; then
+  log "using provided PRIVATE_TRACKERS_KEY"
+  key=$PRIVATE_TRACKERS_KEY
+elif [ -f "$f" ]; then
+  log "key file ${f} already exists"
+  exit
+else
+  key=$(od -An -tx1 -N32 /dev/urandom | tr -d ' \n')
+  log "WARNING: generated PRIVATE_TRACKERS_KEY into ${f}, inside this container only."
+  log "Recreating the container (every image upgrade) generates a new key and leaves every saved private tracker unreadable:"
+  log "users would have to upload their .torrent files again. Set -e PRIVATE_TRACKERS_KEY=<64 hex> to keep it (README, Private torrents)."
+fi
+log "storing PRIVATE_TRACKERS_KEY to ${f}"
+umask 077
+printf 'PRIVATE_TRACKERS_KEY=%s\n' "$(shquote "$key")" > "$f"
+chmod 600 "$f"

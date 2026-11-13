@@ -1,0 +1,1 @@
+/etc/s6-overlay/scripts/generate-private-trackers-key 2>&1

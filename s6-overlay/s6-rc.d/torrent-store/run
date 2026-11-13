@@ -1,6 +1,22 @@
 #!/command/with-contenv sh
+# torrent-store keeps private tracker records only in S3 (design §5.9). S3
+# exists when the built-in store runs or the operator named their own; decided
+# here, before common.env, whose AWS_ENDPOINT always carries the built-in
+# default. Without S3 it runs on Badger alone, as before, and answers private
+# uploads with private_unavailable instead of failing on public ones.
+use_s3=false
+if [ "${USE_LOCALS3:-true}" != "false" ] || [ -n "${AWS_ENDPOINT:-}" ]; then
+  use_s3=true
+fi
 set -a
 source /etc/webtor/common.env
+# The key reaches torrent-store and nothing else (design, owner decision D5).
+source /etc/webtor/secrets/private-trackers.env
 GRPC_PORT=$TORRENT_STORE_SERVICE_PORT
+if [ "$use_s3" = true ]; then
+  source /etc/webtor/secrets/s3.env
+  USE_S3=true
+  AWS_BUCKET=$TORRENT_STORE_AWS_BUCKET
+fi
 set +a
-/app/torrent-store serve 2>&1 | s6-log p"[torrent-http-proxy]" 1
+/app/torrent-store serve 2>&1 | s6-log p"[torrent-store]" 1

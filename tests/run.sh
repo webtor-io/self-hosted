@@ -26,15 +26,22 @@ trap cleanup EXIT
 "${compose[@]}" up -d --force-recreate
 
 failed=0
-for scenario in "$here"/scenarios/*.sh; do
-  name="$(basename "$scenario")"
-  echo "== running $name"
-  if bash "$scenario"; then
-    :
-  else
-    echo "!! $name failed"
-    failed=1
-  fi
+# SCENARIOS="00 71" runs only the scenarios whose names start with those
+# prefixes, in that order; unset runs them all (CI). read, not an unquoted
+# expansion, so the default "*" is not globbed against the current directory.
+# A prefix that matches nothing stays a literal path and fails as a scenario.
+read -ra prefixes <<<"${SCENARIOS:-*}"
+for p in "${prefixes[@]}"; do
+  for scenario in "$here"/scenarios/$p*.sh; do
+    name="$(basename "$scenario")"
+    echo "== running $name"
+    if bash "$scenario"; then
+      :
+    else
+      echo "!! $name failed"
+      failed=1
+    fi
+  done
 done
 
 [ "$failed" -eq 0 ] || { echo "SUITE FAILED"; exit 1; }
