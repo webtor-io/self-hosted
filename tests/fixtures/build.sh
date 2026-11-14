@@ -46,14 +46,17 @@ echo "fixture built: $here/smoke.torrent"
 
 # The private fixture (99-private.sh): the same files under another name, so
 # its library and WebDAV entry never collide with the public one. Seeded only
-# by the compose "tracker" service (fake_tracker.py). private-a carries user
-# A's fake passkey; private-notracker is the same info (the same infohash)
-# with no tracker at all, which an upload must refuse.
+# by the compose "tracker" service (fake_tracker.py). private-a and private-c
+# carry the fake passkeys of users A and C (the same info, so the same
+# infohash); private-notracker is the same info with no tracker at all, which
+# an upload must refuse.
 mkdir -p "$here/private"
 cp -R "$root" "$here/private/webtor-smoke-private"
 python3 "$here/make_fixture.py" "$here/private/webtor-smoke-private" "" "$here/private-a.torrent" \
   --private --announce http://tracker.example:6969/announce/0123456789abcdef0123456789abcdef \
   | tee "$here/private-summary.json"
+python3 "$here/make_fixture.py" "$here/private/webtor-smoke-private" "" "$here/private-c.torrent" \
+  --private --announce http://tracker.example:6969/announce/cccccccccccccccccccccccccccccccc >/dev/null
 python3 "$here/make_fixture.py" "$here/private/webtor-smoke-private" "" "$here/private-notracker.torrent" --private >/dev/null
 echo
 echo "private fixture built: $here/private-a.torrent"

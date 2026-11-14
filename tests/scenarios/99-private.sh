@@ -4,31 +4,43 @@
 # peer is the compose "tracker" service (fixtures/fake_tracker.py), which also
 # logs every announce with the passkey from its URL path.
 #
-# Two accounts. A is the open instance's auto-admin (every browser visitor and
-# lib.sh's api_key); A uploads private-a.torrent and so owns the record. B is a
-# second "user" row with an API key, made through psql: an open instance has
-# one browser user, so "B is refused" is checked through /api/v1 and the CLI.
+# Three accounts. A is the open instance's auto-admin (every browser visitor
+# and lib.sh's api_key); A uploads private-a.torrent and so holds a record. B
+# and C are more "user" rows with API keys, made through psql: an open
+# instance has one browser user, so they act through /api/v1 and the CLI. C
+# uploads private-c.torrent (the same infohash, C's passkey) before A and never
+# plays; B never uploads it.
 #
 # What is checked, in order:
-#   1. B exists.
-#   2. A's upload answers the infohash with "private": true.
+#   1. B and C exist.
+#   2. C's upload, then A's, answer the infohash with "private": true.
 #   3. Every path of A plays under enforce: download (with no cookie and no
 #      key -- the holder of a link plays it), ~vtt, ~arch, ~hls, ~vod, ~vod
 #      inside the grace window of a page start, and WebDAV.
-#   4. The tracker saw that infohash announced with A's key and no other one:
-#      the seeder took the trackers of A's record from torrent-store (Pull
-#      with caller.uid), not those of whoever uploaded first.
+#   4. The tracker saw that infohash announced with A's key and no other one.
+#      C's record is the first of H and holds C's key, so a seeder that took
+#      any record but the caller's (Pull with caller.uid), or a union of
+#      them, would have announced C's key too.
 #   5. B gets 403 private_torrent / no_record.
-#   6. B's token in A's link is refused.
-#   7. source.torrent of the private torrent is never served.
+#   6. A token not bound to H (B's public one) in A's link: THP's gate
+#      refuses it as unbound.
+#   7. source.torrent of the private torrent is refused by the seeder.
 #   8. webtor-cli: A adds and downloads; B exits 8 with the re-upload hint; a
-#      private .torrent without a tracker exits 8.
+#      private .torrent without a tracker exits 8, and the API names it
+#      private_no_tracker.
 #
 # Not here: "bad = 0" and "never account_required" from metrics -- USE_PROM is
 # off in self-hosted; under enforce each of those would be a 403 on its path,
 # and every path above must answer 2xx. Stremio needs an imdb id the fixture
 # has none of.
 source "$(dirname "${BASH_SOURCE[0]}")/../lib.sh"
+
+# Step 8 runs webtor-cli in the webtor container's network namespace: the
+# export URLs it downloads name DOMAIN, http://localhost:$WEBTOR_HOST_PORT,
+# which is that container's own port 8080 only when the host port is 8080 too.
+# Checked first, so another port fails here and not after minutes of work.
+# ponytail: one more host port would need a DOMAIN the CLI container can reach.
+[ "${WEBTOR_HOST_PORT:-8080}" = 8080 ] || fail "99-private needs WEBTOR_HOST_PORT=8080 (its CLI step reaches DOMAIN from the webtor container)"
 
 # jget and resolve_url: copies from 30-hls.sh (each scenario stays
 # self-contained, the suite's convention).
@@ -70,8 +82,9 @@ resolve_url() {
 }
 
 H="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["infohash"])' "$FIXTURE_DIR/private-summary.json")"
-KEY_A=0123456789abcdef0123456789abcdef
+KEY_A=0123456789abcdef0123456789abcdef # passkeys: tests/fixtures/build.sh
 B_TOKEN=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb
+C_TOKEN=cccccccc-cccc-4ccc-8ccc-cccccccccccc
 PRIV="$FIXTURE_DIR/private/webtor-smoke-private"
 compose=(docker compose -f "$TESTS_DIR/docker-compose.yml" -p "$COMPOSE_PROJECT")
 
@@ -142,15 +155,22 @@ psql_app() {
   webtor_exec su -s /bin/sh -c 'psql -U postgres -d app -v ON_ERROR_STOP=1 -qtA' postgres
 }
 
-# --- 1. B -----------------------------------------------------------------
-psql_app >/dev/null <<SQL || fail "could not create user B"
-INSERT INTO "user"(email) VALUES ('b@smoke.invalid') ON CONFLICT (email) DO UPDATE SET email = EXCLUDED.email;
+# --- 1. B and C -------------------------------------------------------------
+add_user() { # add_user <email> <api token>
+  psql_app >/dev/null <<SQL || fail "could not create user $1"
+INSERT INTO "user"(email) VALUES ('$1') ON CONFLICT (email) DO UPDATE SET email = EXCLUDED.email;
 INSERT INTO access_token(token, user_id, name, scope)
-  SELECT '$B_TOKEN', user_id, 'api', '{api:read,api:write}' FROM "user" WHERE email = 'b@smoke.invalid'
+  SELECT '$2', user_id, 'api', '{api:read,api:write}' FROM "user" WHERE email = '$1'
   ON CONFLICT (user_id, name) DO UPDATE SET token = EXCLUDED.token;
 SQL
+}
+add_user b@smoke.invalid "$B_TOKEN"
+add_user c@smoke.invalid "$C_TOKEN"
 
-# --- 2. A uploads -----------------------------------------------------------
+# --- 2. C uploads, then A -----------------------------------------------------
+res="$(apiv1_as "$C_TOKEN" POST /resource --data-binary "@$FIXTURE_DIR/private-c.torrent")" || fail "C's private upload failed: $res"
+assert_eq "$(jget "$res" 'd["id"]' 'resource id')" "$H" "id of C's private upload"
+assert_eq "$(jget "$res" 'd["private"]' 'private flag')" "True" "private flag of C's upload"
 res="$(apiv1 POST /resource --data-binary "@$FIXTURE_DIR/private-a.torrent")" || fail "A's private upload failed: $res"
 assert_eq "$(jget "$res" 'd["id"]' 'resource id')" "$H" "id of A's private upload"
 assert_eq "$(jget "$res" 'd["private"]' 'private flag')" "True" "private flag of A's upload"
@@ -299,9 +319,12 @@ e = json.load(open(sys.argv[1]))["error"]
 assert (e["code"], e.get("reason")) == ("private_torrent", "no_record"), e
 ' "$tmp/b.json" || fail "B's refusal is not private_torrent/no_record: $(cat "$tmp/b.json")"
 
-# --- 6. B's token on A's link -----------------------------------------------
-# A token of B's own (from a public export) put in A's link. The control puts
-# A's own token back the same way: 200, so the 403 is the token's alone.
+# --- 6. A token not bound to H on A's link ----------------------------------
+# B's token from a public export (an API export carries no hash claim) put in
+# A's link: THP's private gate answers "private_torrent: unbound" in the body.
+# Without the gate the seeder would refuse it too (no record), so the body is
+# what shows the gate is on. The control puts A's own token back the same
+# way: 200, so the 403 is the token's alone.
 pub="$(apiv1_as "$B_TOKEN" POST /resource --data-binary "@$FIXTURE_DIR/smoke.torrent")" || fail "B's public upload failed: $pub"
 pub_id="$(jget "$pub" 'd["id"]' 'public resource id')"
 pl="$(apiv1_as "$B_TOKEN" GET "/resource/$pub_id/list?path=/")" || fail "B cannot list the public torrent: $pl"
@@ -309,23 +332,22 @@ pr="$(jget "$pl" '[i["id"] for i in walk(d) if i.get("name") == "readme.txt"][0]
 pex="$(apiv1_as "$B_TOKEN" GET "/resource/$pub_id/export/$pr")" || fail "B cannot export the public readme.txt: $pex"
 b_token="$(qparam "$(jget "$pex" 'd["exports"]["download"]["url"]' 'public download url')" token)"
 [ -n "$b_token" ] || fail "B's public export carries no token"
-assert_eq "$(curl -s -o /dev/null -w '%{http_code}' "$(with_param "$dl_url" token "$b_token")")" "403" \
-  "A's link with B's token"
+code="$(curl -s -o "$tmp/b6.txt" -w '%{http_code}' "$(with_param "$dl_url" token "$b_token")")" || true
+assert_eq "$code" "403" "A's link with B's token"
+assert_eq "$(cat "$tmp/b6.txt")" "private_torrent: unbound" "body of the 403 for B's token on A's link"
 assert_eq "$(curl -s -o /dev/null -w '%{http_code}' "$(with_param "$dl_url" token "$(qparam "$dl_url" token)")")" "200" \
   "A's link rebuilt with A's own token"
 
 # --- 7. source.torrent ------------------------------------------------------
-assert_eq "$(curl -s -o /dev/null -w '%{http_code}' "${dl_url%%"$H/"*}$H/source.torrent?${dl_url#*\?}")" "403" \
-  "source.torrent of the private torrent on A's link"
+# A's token passes THP's gate; the seeder serves a private source.torrent to
+# Vault only, and its refusal says why.
+code="$(curl -s -o "$tmp/src.txt" -w '%{http_code}' "${dl_url%%"$H/"*}$H/source.torrent?${dl_url#*\?}")" || true
+assert_eq "$code" "403" "source.torrent of the private torrent on A's link"
+assert_eq "$(cat "$tmp/src.txt")" "private torrent" "body of the 403 for source.torrent"
 
 # --- 8. webtor-cli ------------------------------------------------------------
-# The published CLI, pinned like in 92-cli.sh. It runs in the webtor
-# container's network namespace: the export URLs it downloads name DOMAIN,
-# http://localhost:$WEBTOR_HOST_PORT, which is that container's own port 8080
-# only when the host port is 8080 too.
-# ponytail: one more host port would need a DOMAIN the CLI container can reach.
-[ "${WEBTOR_HOST_PORT:-8080}" = 8080 ] || fail "the CLI step needs WEBTOR_HOST_PORT=8080 (DOMAIN must be reachable from the CLI container)"
-CLI_IMAGE="ghcr.io/webtor-io/webtor-cli:v1.13.0@sha256:924545062d9ad96ed29de6aeb1d68751109daaea342ced67b0cb836f0e94dad5"
+# The published CLI ($CLI_IMAGE, lib.sh), in the webtor container's network
+# namespace (see the WEBTOR_HOST_PORT check at the top).
 docker pull -q "$CLI_IMAGE" >/dev/null || fail "could not pull $CLI_IMAGE"
 webtor_cid="$("${compose[@]}" ps -q webtor)"
 [ -n "$webtor_cid" ] || fail "the suite's webtor container is not running"
@@ -353,5 +375,10 @@ grep -qF 'webtor add file.torrent' <<<"$out" || fail "B's refusal does not tell 
 rc=0
 out="$(cli "$key_a" add /fixtures/private-notracker.torrent 2>&1)" || rc=$?
 assert_eq "$rc" "8" "A: webtor add of a private torrent without a tracker, exit code ($out)"
+# Exit 8 covers every private refusal; the API names this one.
+code="$(apiv1_as "$key_a" POST /resource --data-binary "@$FIXTURE_DIR/private-notracker.torrent" -o "$tmp/nt.json" -w '%{http_code}')" || true
+assert_eq "$code" "422" "A's upload of a private torrent without a tracker ($(cat "$tmp/nt.json"))"
+assert_eq "$(jget "$(cat "$tmp/nt.json")" 'd["error"]["code"]' 'error code')" "private_no_tracker" \
+  "error code of a private upload without a tracker"
 
 echo "PASS: private"
