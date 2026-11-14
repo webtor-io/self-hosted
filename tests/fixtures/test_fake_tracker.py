@@ -108,9 +108,12 @@ def test_peer_serves_piece_zero():
     assert read_msg(s)[0] == 1  # unchoke
     piece = b''
     while len(piece) < min(PIECE_LENGTH, total):
-        send_msg(s, 6, struct.pack('>III', 0, len(piece), min(16384, min(PIECE_LENGTH, total) - len(piece))))
+        want = min(16384, min(PIECE_LENGTH, total) - len(piece))
+        send_msg(s, 6, struct.pack('>III', 0, len(piece), want))
         mid, payload = read_msg(s)
         assert mid == 7 and payload[:8] == struct.pack('>II', 0, len(piece))
+        # a real client drops a block shorter than it asked for
+        assert len(payload) - 8 == want, f'block at {len(piece)}: {len(payload) - 8} bytes, asked {want}'
         piece += payload[8:]
     assert hashlib.sha1(piece).digest() == pieces[:20]
 
