@@ -29,6 +29,9 @@ FIXTURE_DIR="$TESTS_DIR/fixtures"
 BASE_URL="${BASE_URL:-http://localhost:${WEBTOR_HOST_PORT:-8080}}"
 # Must match the -p passed by run.sh.
 COMPOSE_PROJECT="${COMPOSE_PROJECT:-webtor-smoke}"
+# The published webtor-cli that 92-cli.sh and 99-private.sh run. Renovate does
+# not see this pin (92-cli.sh says why): bump it by hand.
+CLI_IMAGE="ghcr.io/webtor-io/webtor-cli:v1.13.0@sha256:924545062d9ad96ed29de6aeb1d68751109daaea342ced67b0cb836f0e94dad5"
 
 fail() {
   echo "FAIL: $*" >&2

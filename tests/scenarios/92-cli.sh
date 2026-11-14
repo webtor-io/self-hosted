@@ -11,7 +11,8 @@
 # container, and to keep this scenario correct if that early-return ever
 # changes).
 #
-# The CLI runs as the *published* image, pinned by tag+digest the same way
+# The CLI runs as the *published* image (CLI_IMAGE in lib.sh, shared with
+# 99-private.sh), pinned by tag+digest the same way
 # every component in this repo's own Dockerfile is pinned -- testing a
 # locally built binary would prove nothing about what self-hosters actually
 # get. This digest is NOT watched by Renovate: renovate.json's docker
@@ -38,7 +39,6 @@
 # row, there is nothing here that needs an EXIT trap.
 source "$(dirname "${BASH_SOURCE[0]}")/../lib.sh"
 
-CLI_IMAGE="ghcr.io/webtor-io/webtor-cli:v1.13.0@sha256:924545062d9ad96ed29de6aeb1d68751109daaea342ced67b0cb836f0e94dad5"
 CLI_BASE_URL="http://webtor:8080/api/v1"
 
 docker pull "$CLI_IMAGE" >/dev/null || fail "could not pull the webtor-cli image $CLI_IMAGE"
