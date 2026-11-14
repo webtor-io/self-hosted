@@ -7,7 +7,7 @@ here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 content="$here/content"
 root="$content/webtor-smoke"
 
-rm -rf "$content"
+rm -rf "$content" "$here/private"
 mkdir -p "$root/subs"
 
 # Mount the stable parent dir, not "$content": "$content" was just replaced by
@@ -43,3 +43,17 @@ python3 "$here/make_fixture.py" "$root" "http://webseed/" "$here/smoke.torrent" 
   | tee "$here/summary.json"
 echo
 echo "fixture built: $here/smoke.torrent"
+
+# The private fixture (99-private.sh): the same files under another name, so
+# its library and WebDAV entry never collide with the public one. Seeded only
+# by the compose "tracker" service (fake_tracker.py). private-a carries user
+# A's fake passkey; private-notracker is the same info (the same infohash)
+# with no tracker at all, which an upload must refuse.
+mkdir -p "$here/private"
+cp -R "$root" "$here/private/webtor-smoke-private"
+python3 "$here/make_fixture.py" "$here/private/webtor-smoke-private" "" "$here/private-a.torrent" \
+  --private --announce http://tracker.example:6969/announce/0123456789abcdef0123456789abcdef \
+  | tee "$here/private-summary.json"
+python3 "$here/make_fixture.py" "$here/private/webtor-smoke-private" "" "$here/private-notracker.torrent" --private >/dev/null
+echo
+echo "private fixture built: $here/private-a.torrent"

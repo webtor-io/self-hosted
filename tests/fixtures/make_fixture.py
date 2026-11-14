@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Build a trackerless multi-file .torrent with a BEP19 webseed (url-list).
+"""Build a trackerless multi-file .torrent with a BEP19 webseed (url-list),
+or with --private a BEP 27 private one: no webseed, optionally an announce URL.
 
-Usage: make_fixture.py <content-dir> <webseed-url> <out.torrent>
+Usage: make_fixture.py <content-dir> <webseed-url> <out.torrent> [--private] [--announce URL]
 Prints a JSON summary of what was built.
 """
+import argparse
 import hashlib
 import json
-import sys
 from pathlib import Path
 
 PIECE_LENGTH = 32768
@@ -31,7 +32,7 @@ def bencode(value):
     raise TypeError("cannot bencode %r" % type(value))
 
 
-def build(root: Path, webseed: str, out: Path):
+def build(root: Path, webseed: str, out: Path, private: bool = False, announce: str | None = None) -> dict:
     # Sorted so piece hashing is deterministic for a given content tree.
     paths = sorted(p for p in root.rglob("*") if p.is_file())
     if not paths:
@@ -61,8 +62,16 @@ def build(root: Path, webseed: str, out: Path):
         b"pieces": pieces,
         b"files": files,
     }
-    # url-list as a list: both forms are legal, anacrolix accepts either.
-    torrent = {b"info": info, b"url-list": [webseed.encode()]}
+    if private:
+        # Inside info, so it changes the infohash. No url-list: a private
+        # torrent is fetched from its tracker's peers only (BEP 27).
+        info[b"private"] = 1
+        torrent = {b"info": info}
+    else:
+        # url-list as a list: both forms are legal, anacrolix accepts either.
+        torrent = {b"info": info, b"url-list": [webseed.encode()]}
+    if announce:
+        torrent[b"announce"] = announce.encode()
     out.write_bytes(bencode(torrent))
 
     return {
@@ -78,14 +87,19 @@ def build(root: Path, webseed: str, out: Path):
         "piece_length": PIECE_LENGTH,
         "pieces_count": len(pieces) // 20,
         "total_length": sum(f[b"length"] for f in files),
+        "private": private,
     }
 
 
 def main():
-    if len(sys.argv) != 4:
-        raise SystemExit(__doc__)
-    content_dir, webseed, out = sys.argv[1], sys.argv[2], sys.argv[3]
-    print(json.dumps(build(Path(content_dir), webseed, Path(out))))
+    p = argparse.ArgumentParser(usage=__doc__)
+    p.add_argument("content_dir", type=Path)
+    p.add_argument("webseed")
+    p.add_argument("out", type=Path)
+    p.add_argument("--private", action="store_true")
+    p.add_argument("--announce")
+    a = p.parse_args()
+    print(json.dumps(build(a.content_dir, a.webseed, a.out, a.private, a.announce)))
 
 
 if __name__ == "__main__":

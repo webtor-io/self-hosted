@@ -4,10 +4,24 @@ services:
     volumes:
       - ./fixtures/content:/usr/share/nginx/html:ro
 
+  # The private tracker of the private fixture and its only seeder
+  # (fixtures/fake_tracker.py, stdlib only). Its announce URL names
+  # tracker.example, which resolves here and nowhere else.
+  tracker:
+    image: python:3.13-alpine@sha256:9ef1a599f863231c3d91e941389bfdc4a2d6070557243d54df1a4e57015b960e
+    command: ["python3", "/fixtures/fake_tracker.py", "--torrent", "/fixtures/private-a.torrent", "--content", "/fixtures/private"]
+    volumes:
+      - ./fixtures:/fixtures:ro
+    networks:
+      default:
+        aliases:
+          - tracker.example
+
   webtor:
     image: ${WEBTOR_IMAGE:-ghcr.io/webtor-io/self-hosted:latest}
     depends_on:
       - webseed
+      - tracker
     environment:
       # rest-api builds export urls from DOMAIN, and the scenarios fetch those
       # urls from the host, so this must name the published host port.
