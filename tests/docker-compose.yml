@@ -30,6 +30,18 @@ services:
       # this half-configured pair stays off. Nothing else here changes with
       # it, since without a key web-ui sees the feature off either way.
       SUBTITLE_TRANSLATE_ENABLED: "true"
+      # Private torrents enforced by every service at once (web-ui, rest-api,
+      # torrent-store, torrent-web-seeder, torrent-http-proxy): 99-private.sh
+      # needs the refusals, and every other scenario then also proves public
+      # torrents are untouched by enforce.
+      PRIVATE_ACCESS_ENFORCE: "true"
+      # The fake tracker lives on this compose network, a private address the
+      # seeder and magnet2torrent refuse to announce to by default.
+      ALLOW_LOCAL_NETWORKS: "true"
+      # Grace is what a page start of a free viewer gets: THP swaps the token
+      # of ~vod segments inside the window. 99-private.sh checks that swap on
+      # a private torrent; the JSON API never issues grace.
+      GRACE_RULES_ENABLED: "true"
     ports:
       - "${WEBTOR_HOST_PORT:-8080}:8080"
     volumes:
