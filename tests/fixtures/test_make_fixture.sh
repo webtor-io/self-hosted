@@ -53,4 +53,17 @@ expected_infohash="682d2e605dbd38c276f46800c28a4fa3d23ee436"
 # ASCII substring that sits next to invalid UTF-8 byte sequences -- which
 # the SHA1 piece hashes are full of. The C locale treats bytes as bytes.
 LC_ALL=C grep -aq 'url-list' "$tmp/out.torrent" || { echo "FAIL: no url-list"; exit 1; }
+
+# The private variant of the same tree: BEP 27 flag inside info (so another
+# infohash), no webseed (a private torrent is fetched from its tracker's
+# peers only), and the tracker's announce URL with a fake passkey.
+psum="$(python3 "$here/make_fixture.py" "$tmp/webtor-smoke" "" "$tmp/p.torrent" --private --announce http://tracker.example:6969/announce/0123456789abcdef0123456789abcdef)"
+[ "$(printf '%s' "$psum" | python3 -c 'import json,sys;print(json.load(sys.stdin)["private"])')" = "True" ] || { echo "FAIL: not private"; exit 1; }
+LC_ALL=C grep -aq '7:privatei1e' "$tmp/p.torrent" || { echo "FAIL: no private flag in info"; exit 1; }
+LC_ALL=C grep -aq 'url-list' "$tmp/p.torrent" && { echo "FAIL: url-list in a private torrent"; exit 1; }
+LC_ALL=C grep -aq '8:announce' "$tmp/p.torrent" || { echo "FAIL: no announce"; exit 1; }
+pih="$(printf '%s' "$psum" | python3 -c 'import json,sys;print(json.load(sys.stdin)["infohash"])')"
+[ "$pih" != "$expected_infohash" ] || { echo "FAIL: private flag did not change the infohash"; exit 1; }
+# pinned like the public one: rerun and copy the printed value if the tree changes
+[ "$pih" = "0a1c1d128a15e0302e38e702a81f8a804bf9a9eb" ] || { echo "FAIL: private infohash=$pih"; exit 1; }
 echo "PASS: make_fixture"

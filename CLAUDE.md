@@ -32,7 +32,7 @@ tests/run.sh webtor-self-hosted:assembly
 
 **Релиз:** пуш тега `v*` запускает GitHub Actions (`.github/workflows/docker-image.yml`), который делегирует сборку и публикацию multi-arch-манифеста (amd64+arm64) переиспользуемому workflow `webtor-io/.github/.github/workflows/docker-multiarch.yml`. Каждый из 16 компонентных пинов должен быть multi-arch-индексом (amd64+arm64): video-info до 2026-10 публиковался только под amd64, и arm64-образы v2.1.0–v2.1.2 несли его x86-бинарник. Новый или переключённый пин проверять `docker buildx imagetools inspect`. PR-гейт (`.github/workflows/test.yml`) собирает образ и гоняет `tests/run.sh` нативно на amd64- и arm64-раннерах; обе ноги обязательны.
 
-Порт хоста для тестов задаётся `WEBTOR_HOST_PORT` (по умолчанию 8080) — пригодится, когда 8080 занят локальным дев-сервером: `WEBTOR_HOST_PORT=18080 tests/run.sh <image>`. `SCENARIOS` — префиксы сценариев через пробел (`SCENARIOS="00 71" tests/run.sh <image>`), по умолчанию все; CI гоняет всё.
+Порт хоста для тестов задаётся `WEBTOR_HOST_PORT` (по умолчанию 8080) — пригодится, когда 8080 занят локальным дев-сервером: `WEBTOR_HOST_PORT=18080 tests/run.sh <image>`. Исключение — `99-private.sh`: его CLI-шаг ходит на `DOMAIN` из сетевого пространства контейнера webtor, поэтому на другом порту он сразу падает; на 18080 гоняйте сьют без него через `SCENARIOS`. `SCENARIOS` — префиксы сценариев через пробел (`SCENARIOS="00 71" tests/run.sh <image>`), по умолчанию все; CI гоняет всё.
 
 ## Как обновить версию сервиса
 

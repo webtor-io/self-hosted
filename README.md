@@ -252,6 +252,52 @@ is created for you alongside the main one. With `USE_LOCALPG=false` you must
 create it yourself on your external PostgreSQL server before starting the
 container — the default name is `vault`.
 
+## Private torrents
+
+A private torrent (one whose `.torrent` sets `private`, as private trackers'
+do) only works through its tracker, under the account of whoever uploaded it.
+Webtor keeps the tracker URLs of each upload — passkey included — as a record
+of that account, encrypted, in the torrent-store bucket, and nobody else's
+request ever uses them:
+
+- **Private torrents need accounts.** Each account gets its own record, and
+  other accounts are refused until they upload the `.torrent` themselves. On
+  an open instance (no `ADMIN_PASSWORD`, see
+  [Administrator Password](#administrator-password)) every visitor is the same
+  administrator account, so everyone shares one record.
+- Webtor announces with the key from the uploaded `.torrent`, and a stream
+  downloads under that tracker account, so it counts in your ratio there. The
+  links it hands out (download, stream, player) are signed to your account and
+  that torrent, and work for at most 24 hours; whoever holds one can use it
+  until then.
+- The record key is generated on the first start into
+  `/etc/webtor/secrets/private-trackers.env`, which lives in the container, not
+  in a volume. Recreating the container (every image upgrade) or losing that
+  file makes every record unreadable, and users have to upload their `.torrent`
+  files again. The log says so with a `[generate-private-trackers-key] WARNING`.
+  Set the key once and keep it:
+
+  ```bash
+  docker run ... -e PRIVATE_TRACKERS_KEY=$(openssl rand -hex 32) ...
+  ```
+
+  It is 64 hex digits; any other value keeps torrent-store from starting. Save
+  the value: the same `-e` on every later `docker run` keeps the records
+  readable.
+- Records live in S3 only. Without one for torrent-store (`USE_LOCALS3=false`
+  and no `AWS_ENDPOINT`) private torrents are off: an upload is refused with
+  `422 private_unavailable`, public torrents work as before. With S3 every
+  `.torrent` is kept in the `TORRENT_STORE_AWS_BUCKET` bucket (default
+  `torrent-store`, see [Configuring S3 Storage](#configuring-s3-storage)) and
+  no longer expires after an hour.
+- A tracker on your local network (a private address) is refused unless you set
+  `ALLOW_LOCAL_NETWORKS=true`.
+- **PRIVATE_ACCESS_ENFORCE** (default: false; temporary, it will go away once
+  enforcing is the only mode) — `true` refuses every account without its own
+  record right away. `false` only counts those refusals, so private torrents
+  added before this release keep playing as they did until their users upload
+  them again.
+
 ## Notifications
 
 Webtor keeps an in-app notification feed — vault saves, vault content that is

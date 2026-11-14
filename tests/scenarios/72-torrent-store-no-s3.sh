@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # An instance with no S3 at all (USE_LOCALS3=false, no AWS_ENDPOINT):
 # torrent-store runs on Badger alone, without USE_S3, and public uploads keep
-# working. Also: a key given with -e PRIVATE_TRACKERS_KEY is stored as given,
+# working, while a private upload is refused with 422 private_unavailable
+# (private records live in S3 only). Also: a key given with -e PRIVATE_TRACKERS_KEY is stored as given,
 # which is what lets an operator keep it across a container recreate.
 #
 # Both are read at startup, so this needs its own container, like
@@ -29,4 +30,14 @@ x grep -qx "PRIVATE_TRACKERS_KEY='0123456789abcdef0123456789abcdef0123456789abcd
 resource="$(apiv1 POST /resource --data-binary "@$FIXTURE_DIR/smoke.torrent")" || fail "a public upload fails without S3"
 assert_eq "$(printf '%s' "$resource" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')" \
   "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["infohash"])' "$FIXTURE_DIR/summary.json")" "public upload id without S3"
+# Private records live in S3 only: here a private upload is refused, by name,
+# and not as a failure (an operator without S3 reads the code, not a 5xx).
+key="$(api_key)" || fail "could not obtain an API key on the no-S3 instance"
+b="$(mktemp)"
+trap 'rm -f "$b"; cleanup' EXIT
+code="$(curl -s -o "$b" -w '%{http_code}' -X POST -H "Authorization: Bearer $key" \
+  -H "Content-Type: application/x-bittorrent" --data-binary "@$FIXTURE_DIR/private-a.torrent" "$BASE_URL/api/v1/resource")"
+assert_eq "$code" "422" "private upload status without S3 ($(cat "$b"))"
+assert_eq "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["error"]["code"])' "$b")" \
+  "private_unavailable" "private upload error code without S3"
 echo "PASS: torrent-store-no-s3"

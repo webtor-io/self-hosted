@@ -5,6 +5,7 @@ set -euo pipefail
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export WEBTOR_IMAGE="${1:-${WEBTOR_IMAGE:-ghcr.io/webtor-io/self-hosted:latest}}"
 # Override when 8080 is taken on the host (a local dev server, another suite run).
+# 99-private.sh needs 8080 and fails at once on any other port.
 export WEBTOR_HOST_PORT="${WEBTOR_HOST_PORT:-8080}"
 compose=(docker compose -f "$here/docker-compose.yml" -p webtor-smoke)
 

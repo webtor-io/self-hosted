@@ -27,3 +27,6 @@ tmp
 tests/fixtures/content/
 tests/fixtures/*.torrent
 tests/fixtures/summary.json
+tests/fixtures/private/
+tests/fixtures/private-summary.json
+__pycache__/
