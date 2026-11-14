@@ -14,7 +14,7 @@ This is the self-hosted version of [webtor.io](https://webtor.io), implemented a
 - **Subtitles from OpenSubtitles:** Matching subtitle tracks are found and offered in the player automatically (needs a free OpenSubtitles API key, see "Configuring OpenSubtitles").
 - **AI subtitles:** Translate subtitle tracks -- embedded, uploaded or found on OpenSubtitles -- into your language on the fly, right in the player (needs an AI API key, see "Configuring AI features").
 - **Stremio integration** Just install the addon using the link from profile and start watching your library on TV with Stremio.
-- **Developer-friendly** With the [SDK](https://github.com/webtor-io/embed-sdk-js) you can provide your users with the ability to watch torrent-videos online on your website.
+- **Developer-friendly** With the [SDK](https://github.com/webtor-io/embed-sdk-js) you can provide your users with the ability to watch torrent-videos online on your website. Embeds are served by your own instance: point the SDK's `baseUrl` at it (webtor.io does not serve embeds).
 
 ## Quick Setup
 
@@ -77,6 +77,12 @@ different sites — needs the instance served over https with
 `DOMAIN=https://…` (see [Setting a Custom Domain](#setting-a-custom-domain)).
 Over plain http the browser keeps no session in a cross-site frame, so the
 player there cannot start.
+
+The domain list keeps honest sites in order; it is not access control. The domain is
+the one the embedding page reports about itself, so a page that wants to can
+claim a listed domain (or `localhost`). Turn embedding off entirely with
+`USE_EMBED=false`: the player's Embed button and the domain list disappear,
+and frames already placed on other sites show a short "not available" message.
 
 ## API Access
 
