@@ -220,8 +220,10 @@ jar="$tmp/jar"
 curl -fsSL -o /dev/null -c "$jar" "$BASE_URL/$H" || fail "A's page of the private torrent failed"
 profile="$(curl -fsS -b "$jar" -c "$jar" "$BASE_URL/profile")" || fail "GET /profile failed"
 csrf="$(csrf_from "$profile")" || fail "GET /profile rendered no _csrf token"
-started="$(curl -fsS -b "$jar" -c "$jar" \
-  -F "_csrf=$csrf" -F "resource-id=$H" -F "item-id=$video_id" "$BASE_URL/stream-video")" \
+# The page posts the form as an async fragment request (lib/async.js); the
+# job card with its log URL is rendered into that fragment.
+started="$(curl -fsS -b "$jar" -c "$jar" -H 'X-Requested-With: XMLHttpRequest' \
+  -H 'X-Layout: {{ template "main" . }}' -F "_csrf=$csrf" -F "resource-id=$H" -F "item-id=$video_id" "$BASE_URL/stream-video")" \
   || fail "POST /stream-video failed: ${started:0:500}"
 log_path="$(first_group 'data-async-progress-log="([^"]+)"' "$started")" \
   || fail "POST /stream-video started no job: ${started:0:500}"
