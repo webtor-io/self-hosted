@@ -21,7 +21,7 @@ FROM ghcr.io/webtor-io/video-info:master@sha256:e46649680fd6662c9f8050e1dcc3884f
 FROM ghcr.io/webtor-io/torrent-http-proxy:master@sha256:aca64d423c0c1986a95472f97056071cc3eab89eaba71c1c04497111687c5d3d AS torrent-http-proxy
 FROM ghcr.io/webtor-io/rest-api:main@sha256:7826489a3916a14b106aa0acbd8e4881dce407e4c23fd7c992181da63b7ae6aa AS rest-api
 FROM ghcr.io/webtor-io/web-ui:main@sha256:bb00d84dac378c4b80b40820fab06bb813f182beb2c10eb7d8fd9fe850683e78 AS web-ui
-FROM ghcr.io/webtor-io/nginx-vod:main@sha256:fd1f4fa696e945b73019981d7f077d429035a304bead2125adf1e689a097a2d6 AS nginx-vod
+FROM ghcr.io/webtor-io/nginx-vod:main@sha256:8a86365563d6f0312d9d542a56997375681b6ed808f3f2b0bc02fc280e422033 AS nginx-vod
 FROM ghcr.io/webtor-io/vault:main@sha256:03015a0d542b4e5fb58e4853da0bec7cbdeb4997b87c50accf84ba15dacae823 AS vault
 
 # Not a webtor component: the S3 gateway backing /storage. Apache 2.0, one
