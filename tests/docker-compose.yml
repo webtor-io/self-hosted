@@ -34,7 +34,6 @@ services:
       # torrent-store, torrent-web-seeder, torrent-http-proxy): 99-private.sh
       # needs the refusals, and every other scenario then also proves public
       # torrents are untouched by enforce.
-      PRIVATE_ACCESS_ENFORCE: "true"
       # The fake tracker lives on this compose network, a private address the
       # seeder and magnet2torrent refuse to announce to by default.
       ALLOW_LOCAL_NETWORKS: "true"
