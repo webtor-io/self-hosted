@@ -212,10 +212,10 @@ get_segment "$seg" "private ~hls first segment"
 
 # ~vod in the grace window: started as a browser does from the torrent's page
 # (session cookie, CSRF token, POST /stream-video), the player's <source> read
-# from the job's event stream. Under grace THP puts the grace token on the
-# segments, so their token differs from the manifest's. The token comes from
-# /profile's _csrf input, as in lib.sh: one per session, and the page's own
-# window._CSRF is JS-escaped.
+# from the job's event stream. Under grace THP puts the grace token (web-ui's
+# kind=grace JWT) on the segments inside the window, in place of the
+# manifest's own token. The CSRF token comes from /profile's _csrf input, as in
+# lib.sh: one per session, and the page's own window._CSRF is JS-escaped.
 jar="$tmp/jar"
 curl -fsSL -o /dev/null -c "$jar" "$BASE_URL/$H" || fail "A's page of the private torrent failed"
 profile="$(curl -fsS -b "$jar" -c "$jar" "$BASE_URL/profile")" || fail "GET /profile failed"
@@ -249,12 +249,14 @@ with urllib.request.urlopen(sys.argv[1], timeout=60) as r:
 sys.exit("job log ended without a <source>")
 EOF
 )" || fail "the page's stream job gave no player source"
-src_token="$(qparam "$src" token)"
-[ -n "$src_token" ] || fail "player source carries no token: $src"
+# jwt_kind <jwt> -- the "kind" claim, read without checking the signature.
+jwt_kind() {
+  python3 -c 'import base64, json, sys; p = sys.argv[1].split(".")[1]; print(json.loads(base64.urlsafe_b64decode(p + "=" * (-len(p) % 4))).get("kind", ""))' "$1"
+}
+src_kind="$(jwt_kind "$(qparam "$src" token)")" || fail "player source carries no JWT token: $src"
+[ "$src_kind" != grace ] || fail "the manifest itself carries a grace token: $src"
 seg="$(first_segment "$src")" || exit 1
-seg_token="$(qparam "$seg" token)"
-[ -n "$seg_token" ] || fail "grace segment carries no token: $seg"
-[ "$seg_token" != "$src_token" ] || fail "segment token equals the manifest's: THP gave no grace"
+assert_eq "$(jwt_kind "$(qparam "$seg" token)")" "grace" "token kind of the first segment in the grace window ($seg)"
 get_segment "$seg" "private ~vod segment in the grace window"
 
 # WebDAV: the library entry under all/<torrent name>/ (services/libfs:
@@ -298,8 +300,8 @@ assert (e["code"], e.get("reason")) == ("private_torrent", "no_record"), e
 ' "$tmp/b.json" || fail "B's refusal is not private_torrent/no_record: $(cat "$tmp/b.json")"
 
 # --- 6. B's token on A's link -----------------------------------------------
-# A token of B's own (from a public export) put in A's link. Replacing it with
-# A's own token instead is the control: that is the link of step 3, a 200.
+# A token of B's own (from a public export) put in A's link. The control puts
+# A's own token back the same way: 200, so the 403 is the token's alone.
 pub="$(apiv1_as "$B_TOKEN" POST /resource --data-binary "@$FIXTURE_DIR/smoke.torrent")" || fail "B's public upload failed: $pub"
 pub_id="$(jget "$pub" 'd["id"]' 'public resource id')"
 pl="$(apiv1_as "$B_TOKEN" GET "/resource/$pub_id/list?path=/")" || fail "B cannot list the public torrent: $pl"
@@ -309,6 +311,8 @@ b_token="$(qparam "$(jget "$pex" 'd["exports"]["download"]["url"]' 'public downl
 [ -n "$b_token" ] || fail "B's public export carries no token"
 assert_eq "$(curl -s -o /dev/null -w '%{http_code}' "$(with_param "$dl_url" token "$b_token")")" "403" \
   "A's link with B's token"
+assert_eq "$(curl -s -o /dev/null -w '%{http_code}' "$(with_param "$dl_url" token "$(qparam "$dl_url" token)")")" "200" \
+  "A's link rebuilt with A's own token"
 
 # --- 7. source.torrent ------------------------------------------------------
 assert_eq "$(curl -s -o /dev/null -w '%{http_code}' "${dl_url%%"$H/"*}$H/source.torrent?${dl_url#*\?}")" "403" \
