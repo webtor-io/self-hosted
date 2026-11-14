@@ -186,6 +186,10 @@ readme_path="$(item readme.txt path)"
 srt_id="$(item subtitle.srt id)"
 video_id="$(item video.mp4 id)"
 subs_id="$(item subs id directory)"
+# CONTROL (not for merge): C plays first, so the seeder announces C's key
+# and step 4 must turn red.
+cex="$(apiv1_as "$C_TOKEN" GET "/resource/$H/export/$readme_id")" || fail "CONTROL: C cannot export: $cex"
+wait_for 240 "CONTROL: C's readme.txt" curl -fsS -o /dev/null "$(jget "$cex" 'd["exports"]["download"]["url"]' 'C download url')"
 export_url() { # export_url <content-id> <download|stream>
   local ex
   ex="$(apiv1 GET "/resource/$H/export/$1")" || fail "A cannot export $1: $ex"
