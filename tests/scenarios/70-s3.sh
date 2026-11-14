@@ -6,14 +6,15 @@
 # different "s3": web-ui's own /s3 endpoint, an S3-protocol gateway over the
 # user's torrent library (buckets torrents/all/movies/series), reached
 # through nginx on the public web port. This scenario is about versitygw on
-# 127.0.0.1:8099, internal-only, buckets vault/posters/subtitles/thumbnails.
+# 127.0.0.1:8099, internal-only, buckets vault/posters/subtitles/thumbnails/
+# torrent-store.
 # Same three letters, unrelated services -- see 91-s3-webui.sh's own header.
 source "$(dirname "${BASH_SOURCE[0]}")/../lib.sh"
 
-# 1. The four bucket directories exist inside the container. s3/run creates
+# 1. The five bucket directories exist inside the container. s3/run creates
 # them itself (a bucket is just a directory under $STORAGE_DIR to versitygw's
 # posix backend) after its writability/xattr probes pass.
-for b in vault posters subtitles thumbnails; do
+for b in vault posters subtitles thumbnails torrent-store; do
   webtor_exec test -d "/storage/$b" </dev/null \
     || fail "bucket directory /storage/$b does not exist"
 done

@@ -154,11 +154,13 @@ different:
 - **`/pgdata`** — the embedded PostgreSQL database (accounts, your library,
   settings). Not disposable — there is nothing to re-fetch it from.
 - **`/storage`** — the embedded S3 store. Part of it is a cache (posters,
-  thumbnails) as disposable as `/data`; part of it is user-uploaded subtitles
-  and content saved to Vault, both not disposable — nobody else has your
+  thumbnails) as disposable as `/data`; part of it is user-uploaded subtitles,
+  the `.torrent` files added to the instance (the `torrent-store` bucket) and
+  content saved to Vault, none of them disposable — nobody else has your
   copy, and Vault exists specifically so that content outlives the torrent's
-  swarm. `/storage` grows as you save things to Vault; that growth is
-  expected, not a leak — see [Configuring Vault](#configuring-vault).
+  swarm. `/storage` grows as you save things to Vault and add torrents
+  (`.torrent` files are kept with no expiry); that growth is expected, not a
+  leak — see [Configuring Vault](#configuring-vault).
 
 Mount all three as real volumes:
 
@@ -173,7 +175,8 @@ type, checksums, multipart state — in filesystem extended attributes, and bind
 mounts from macOS and Windows (and some network filesystems on Linux) do not
 support them. When that's the case the store logs a clear error and idles
 instead of crash-looping — check `docker logs webtor` for a `[s3]`-prefixed
-message if it never comes up.
+message if it never comes up. Until it does, adding torrents fails too:
+torrent-store keeps `.torrent` files in that store.
 
 If you ever need to copy `/storage` elsewhere (backup, moving to another
 host), use a tool that preserves extended attributes — `rsync -X`, `cp -a`, or
@@ -187,7 +190,8 @@ point your volume at the new path instead.
 
 By default Webtor runs an embedded S3-compatible store (versitygw over a local
 directory, see [Storage Layout](#storage-layout) above for the volume
-requirements) for the poster cache, user-uploaded subtitles and thumbnails.
+requirements) for the poster cache, user-uploaded subtitles, thumbnails and
+the `.torrent` files torrent-store keeps.
 Credentials are generated on first boot and persisted, so they survive
 container restarts. They live on the container's own filesystem, not in a
 volume, so replacing the container — an image upgrade, for instance — mints a
@@ -205,11 +209,20 @@ variables:
 - **AWS_POSTER_CACHE_BUCKET** - bucket for the poster cache (default: posters)
 - **AWS_USER_SUBTITLE_BUCKET** - bucket for user-uploaded subtitles (default: subtitles)
 - **AWS_THUMBNAIL_BUCKET** - bucket for thumbnails (default: thumbnails)
+- **TORRENT_STORE_AWS_BUCKET** - bucket torrent-store keeps `.torrent` files in (default: torrent-store)
 
 To use an external S3 instead of the built-in store, set `USE_LOCALS3=false`,
 `AWS_ENDPOINT` and the credentials; the bucket variables above still apply —
 plus `VAULT_AWS_BUCKET` (see [Configuring Vault](#configuring-vault) below) —
 and point at buckets on that external store (which you must create yourself).
+
+**Upgrading an instance that already runs on an external S3:** create the
+`torrent-store` bucket there (or set `TORRENT_STORE_AWS_BUCKET` to a bucket you
+have) before you start the new image. torrent-store writes every added torrent
+to that bucket first, so while the bucket is missing, or the credentials cannot
+write to it, adding torrents fails. An instance with no S3 at all
+(`USE_LOCALS3=false` and no `AWS_ENDPOINT`) keeps torrent-store on its local
+cache, as before.
 
 ## Configuring Vault
 

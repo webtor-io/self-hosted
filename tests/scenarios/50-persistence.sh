@@ -59,6 +59,12 @@ for want in video.mp4 readme.txt subtitle.srt; do
     || fail "fixture file '$want' missing before restart: $listing_before"
 done
 
+# The private-trackers key lives in the container's layer, not a volume: a
+# restart must keep it, or every saved private tracker becomes unreadable.
+# Only its hash leaves the container, and it is never printed. A missing file
+# leaves the hash empty, which fails below instead of exiting silently here.
+k1="$(webtor_exec sha256sum /etc/webtor/secrets/private-trackers.env </dev/null | cut -d' ' -f1)" || k1=
+
 "${compose[@]}" restart webtor
 
 wait_for 240 "front page after restart" curl -fsS "$BASE_URL/"
@@ -68,6 +74,9 @@ wait_for 240 "front page after restart" curl -fsS "$BASE_URL/"
 # Postgres, not tied to the pre-restart session) -- so `apiv1` keeps
 # working unchanged after the restart.
 wait_for 120 "resource after restart" apiv1 GET "/resource/$id"
+
+k2="$(webtor_exec sha256sum /etc/webtor/secrets/private-trackers.env </dev/null | cut -d' ' -f1)" || k2=
+[ -n "$k1" ] && [ "$k1" = "$k2" ] || fail "PRIVATE_TRACKERS_KEY changed across a restart"
 
 # Getting a 200 back proves almost nothing by itself -- an empty, freshly
 # re-initialized resource could 200 too. Re-read the listing and require the
