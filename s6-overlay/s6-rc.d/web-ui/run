@@ -6,6 +6,14 @@ source /etc/webtor/secrets/s3.env
 source /etc/webtor/secrets/session.env
 WEBTOR_API_KEY=$API_KEY
 WEBTOR_API_SECRET=$API_SECRET
+# Browsers PUT upload parts here: nginx routes /torrent-http-proxy/ to
+# torrent-http-proxy, as for export links (rest-api/run). DOMAIN must be how
+# browsers reach us. Not overridable: web-ui's own calls to the seeder (the
+# seal before a Vault pledge, the delete) keep this path and go to the
+# in-container proxy address (USE_INTERNAL_TORRENT_HTTP_PROXY in common.env,
+# TORRENT_HTTP_PROXY_SERVICE_* below), where only /torrent-http-proxy/ leads
+# to torrent-http-proxy.
+UPLOAD_URL=${DOMAIN%/}/torrent-http-proxy
 TORRENT_HTTP_PROXY_SERVICE_PORT=$WEB_PORT
 TORRENT_HTTP_PROXY_SERVICE_HOST=127.0.0.1
 WEB_PORT=$WEB_UI_SERVICE_PORT

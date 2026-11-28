@@ -11,6 +11,7 @@ This is the self-hosted version of [webtor.io](https://webtor.io), implemented a
    - **Audio:** `mp3`, `wav`, `ogg`, `flac`, `m4a`
 - **Download Entire Torrent as a ZIP Archive:** Download your torrent as a ZIP archive on-the-fly while preserving the original directory structure, without requiring a torrent client.
 - **Personal Library:** Organize your own collection by adding torrents to your account. Movies and series will be detected automatically!
+- **Your own files:** Upload files and folders, then stream or download them like a torrent (see "Uploading your own files").
 - **Subtitles from OpenSubtitles:** Matching subtitle tracks are found and offered in the player automatically (needs a free OpenSubtitles API key, see "Configuring OpenSubtitles").
 - **AI subtitles:** Translate subtitle tracks -- embedded, uploaded or found on OpenSubtitles -- into your language on the fly, right in the player (needs an AI API key, see "Configuring AI features").
 - **Stremio integration** Just install the addon using the link from profile and start watching your library on TV with Stremio.
@@ -156,7 +157,9 @@ different:
 
 - **`/data`** — the torrent download cache. Disposable: Webtor re-downloads
   whatever it needs from the swarm, so losing it costs time and bandwidth, not
-  data.
+  data. It also holds uploads not saved to Vault
+  ([Uploading your own files](#uploading-your-own-files)): losing `/data`
+  loses those.
 - **`/pgdata`** — the embedded PostgreSQL database (accounts, your library,
   settings). Not disposable — there is nothing to re-fetch it from.
 - **`/storage`** — the embedded S3 store. Part of it is a cache (posters,
@@ -297,6 +300,36 @@ request ever uses them:
   record right away. `false` only counts those refusals, so private torrents
   added before this release keep playing as they did until their users upload
   them again.
+
+## Uploading your own files
+
+Signed-in users can upload their own files and folders from the drop zone and
+stream or download them like a torrent. There is nothing to configure, but:
+
+- The browser sends the files to `$DOMAIN/torrent-http-proxy`, so `DOMAIN`
+  must be the address browsers open (see
+  [Setting a Custom Domain](#setting-a-custom-domain)). Saving an upload to
+  Vault and deleting it are the instance's own calls and stay inside the
+  container: a host port other than 8080 (`-p 8085:8080`) or a name that
+  resolves only outside the container works.
+- Files go up in parts of up to 16 MiB. A reverse proxy in front of the
+  instance must accept request bodies that large (nginx:
+  `client_max_body_size 20m;`), or every upload fails.
+- Only the uploader sees an upload, as with a private torrent. On an open
+  instance (no `ADMIN_PASSWORD`, see
+  [Administrator Password](#administrator-password)) every visitor is the same
+  administrator account and sees every upload.
+- Publish only the web port. torrent-http-proxy checks the token of every
+  upload request and tells the seeder what it may do; the seeder trusts that
+  and checks no token itself. The seeder's port (8091) published with `-p`, or
+  reachable through `--network host`, lets anyone who reaches it write to
+  uploads and delete them.
+- Uploads live in `/data` (`DATA_DIR`) next to the torrent cache, and the same
+  autocleaner ([Configuring the Autocleaner](#configuring-the-autocleaner))
+  removes those that have not been opened for a while when space runs low.
+  Save to Vault what you need to keep. Without Vault (`USE_VAULT=false`) a
+  removed upload is gone and its page answers 404.
+- Each account can hold up to 50 GiB of uploads not saved to Vault.
 
 ## Notifications
 
