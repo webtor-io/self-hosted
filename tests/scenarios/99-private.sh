@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Private (BEP 27) torrents end to end, with PRIVATE_ACCESS_ENFORCE on in every
-# service (docker-compose.yml). The private fixture has no webseed: its only
+# Private (BEP 27) torrents end to end. Every service enforces private access
+# and there is no switch for it. The private fixture has no webseed: its only
 # peer is the compose "tracker" service (fixtures/fake_tracker.py), which also
 # logs every announce with the passkey from its URL path.
 #

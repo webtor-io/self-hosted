@@ -292,11 +292,12 @@ request ever uses them:
   no longer expires after an hour.
 - A tracker on your local network (a private address) is refused unless you set
   `ALLOW_LOCAL_NETWORKS=true`.
-- **PRIVATE_ACCESS_ENFORCE** (default: false; temporary, it will go away once
-  enforcing is the only mode) — `true` refuses every account without its own
-  record right away. `false` only counts those refusals, so private torrents
-  added before this release keep playing as they did until their users upload
-  them again.
+- Access is always enforced: there is no setting that lets an account without
+  its own record through, or that only logs the refusal.
+- Private torrents added before v2.2.0 have no record for any account, so their
+  users may have to upload the `.torrent` again. Before v2.2.0 torrent-store
+  had no S3 and kept torrents only inside the container, so many of those may
+  be gone already.
 
 ## Notifications
 
