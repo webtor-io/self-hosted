@@ -14,7 +14,8 @@
 #   5. A browser's token may not read the manifest, delete or seal the whole
 #      upload, and a client's own write headers grant nothing: the seeder
 #      trusts the headers torrent-http-proxy sets, so a proxy that let the
-#      client's through would fail here.
+#      client's through would fail here. The seeder's own port does not
+#      connect from outside the container.
 #   6. A padded ID is refused.
 #   7. A Vault pledge seals the upload; the delete leaves a tombstone and
 #      takes the Vault copy with it (80-vault.sh runs after this in the same
@@ -140,6 +141,26 @@ webtor_exec test -f "/data/$id/files/smoke-upload/a.bin" </dev/null || fail "a c
 assert_eq "$(lines "$id" /)" "0" "tombstone after refused deletes"
 assert_eq "$(code -X PUT -H 'Content-Length: 0' "$url/?$qa")" "403" "seal with a browser's token"
 assert_eq "$(lines "$id" '~')" "0" "seal line after a refused seal"
+# Nor can anyone skip the proxy: the seeder listens on loopback only. From
+# another container on the network, the service's delete of the whole upload,
+# headers forged, sent straight to the seeder's port does not connect; the web
+# port of the same container does (the control).
+direct_delete() { # direct_delete <port> -- the status, or the error's name
+  docker compose -f "$TESTS_DIR/docker-compose.yml" -p "$COMPOSE_PROJECT" exec -T tracker python3 -c '
+import http.client, sys
+c = http.client.HTTPConnection("webtor", int(sys.argv[1]), timeout=10)
+try:
+    c.request("DELETE", "/%s/" % sys.argv[2], headers={"X-Info-Hash": sys.argv[2],
+              "X-Internal": "true", "X-Upload-Up": "add", "X-Upload-Lim": "1"})
+    print(c.getresponse().status)
+except OSError as e:
+    print(type(e).__name__)
+' "$1" "$id" </dev/null
+}
+c="$(direct_delete 8080)"
+[[ "$c" =~ ^[0-9]{3}$ ]] || fail "the web port does not answer from another container: $c"
+assert_eq "$(direct_delete 8091)" "ConnectionRefusedError" "a forged delete straight to the seeder's port"
+webtor_exec test -f "/data/$id/files/smoke-upload/a.bin" </dev/null || fail "a forged delete straight to the seeder removed a.bin"
 
 # --- 6. a padded ID ---------------------------------------------------------
 # nginx passes the padding through as is; the token, bound to the bare ID,

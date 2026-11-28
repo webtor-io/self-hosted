@@ -5,9 +5,12 @@ WEB_PORT=$TORRENT_WEB_SEEDER_SERVICE_PORT
 USE_STAT=false
 # Serve and take user uploads. What a write may do comes as headers from
 # torrent-http-proxy in this container, which sets them from a verified token
-# and overwrites the client's; the seeder holds no API secret and trusts them,
-# so its port must not be published.
+# and overwrites the client's; the seeder holds no API secret and trusts them.
 ACCEPT_USER_UPLOADS=true
+# So it listens on loopback only, like vault: torrent-http-proxy here is its
+# only client, and anything else that reached the port could forge those
+# headers. A published port or another container on the network gets nothing.
+WEB_HOST=$TORRENT_WEB_SEEDER_SERVICE_HOST
 # Without Vault the seeder must not ask it: an upload the cleaner removed is
 # then 404, not a Vault error (a 5xx) that never frees its quota.
 if [ "${USE_VAULT:-true}" = "false" ]; then

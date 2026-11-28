@@ -319,11 +319,14 @@ stream or download them like a torrent. There is nothing to configure, but:
   instance (no `ADMIN_PASSWORD`, see
   [Administrator Password](#administrator-password)) every visitor is the same
   administrator account and sees every upload.
-- Publish only the web port. torrent-http-proxy checks the token of every
-  upload request and tells the seeder what it may do; the seeder trusts that
-  and checks no token itself. The seeder's port (8091) published with `-p`, or
-  reachable through `--network host`, lets anyone who reaches it write to
-  uploads and delete them.
+- torrent-http-proxy checks the token of every upload request and tells the
+  seeder what it may do; the seeder trusts that and checks no token itself.
+  So the seeder listens on `127.0.0.1` only and is reached through
+  torrent-http-proxy alone: a published port or another container gets
+  nothing. With `--network host` the container's loopback is the host's, and
+  any process on the host can write to uploads and delete them through the
+  seeder's port (8091): do not run the image with host networking on a host
+  you share with users or containers you do not trust.
 - Uploads live in `/data` (`DATA_DIR`) next to the torrent cache, and the same
   autocleaner ([Configuring the Autocleaner](#configuring-the-autocleaner))
   removes those that have not been opened for a while when space runs low.
