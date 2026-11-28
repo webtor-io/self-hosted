@@ -3,5 +3,22 @@ set -a
 source /etc/webtor/common.env
 WEB_PORT=$TORRENT_WEB_SEEDER_SERVICE_PORT
 USE_STAT=false
+# Serve and take user uploads. What a write may do comes as headers from
+# torrent-http-proxy in this container, which sets them from a verified token
+# and overwrites the client's; the seeder holds no API secret and trusts them.
+ACCEPT_USER_UPLOADS=true
+# So it listens on loopback only, like vault: torrent-http-proxy here is its
+# only client, and anything else that reached the port could forge those
+# headers. A published port or another container on the network gets nothing.
+WEB_HOST=$TORRENT_WEB_SEEDER_SERVICE_HOST
+# Without Vault the seeder must not ask it: an upload the cleaner removed is
+# then 404, not a Vault error (a 5xx) that never frees its quota.
+if [ "${USE_VAULT:-true}" = "false" ]; then
+  VAULT_SERVICE_HOST=
+fi
 set +a
+# A new upload's <id>.touch is written into DATA_DIR before the upload's own
+# directory is made, so without a volume there (the image has no /data) the
+# first upload of a fresh container would fail.
+mkdir -p "$DATA_DIR"
 /app/torrent-web-seeder 2>&1 | s6-log p"[torrent-web-seeder]" 1
